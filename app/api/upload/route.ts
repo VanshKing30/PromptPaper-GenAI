@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { extractTextFromPDF } from "@/app/lib/pdf";
 
 export async function POST(request : Request){
 
@@ -26,10 +27,17 @@ export async function POST(request : Request){
         console.log("File Type: " , file.type);
         console.log("File Size: " , file.size);
 
+
+        const extractedText = await extractTextFromPDF(file);
+        console.log(extractedText);
+
         return NextResponse.json({
             success : true,
-            message : "PDF recieved successfully",
+            extractedText,
         });
+
+        
+
     }catch(error){
         console.error(error);
 

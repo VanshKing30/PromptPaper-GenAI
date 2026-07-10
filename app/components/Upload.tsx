@@ -35,7 +35,7 @@ export default function PdfUploader() {
 
       const data = await response.json();
 
-      console.log(data);
+      console.log(data.extractedText);
 
       if (data.success) {
         alert("PDF Uploaded Successfully!");
