@@ -1,5 +1,5 @@
 "use client";
-
+import { chunkText } from "../lib/chunk";
 import { useState } from "react";
 
 export default function PdfUploader() {
@@ -35,7 +35,16 @@ export default function PdfUploader() {
 
       const data = await response.json();
 
-      console.log(data.extractedText);
+      
+
+      const chunks = chunkText(data.extractedText);
+
+      console.log("total chunks :" , chunks.length);
+      console.log(chunks[0]);
+      console.log(chunks[1]);
+      
+
+      // This line of code outputs the whole text extraced : console.log(data.extractedText);
 
       if (data.success) {
         alert("PDF Uploaded Successfully!");
