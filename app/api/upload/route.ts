@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { extractTextFromPDF } from "@/app/lib/pdf";
+import { chunkText } from "@/app/lib/chunk";
+import { generateEmbedding } from "@/app/lib/embeddings";
+import { processPDF } from "@/app/lib/rag";
 
 export async function POST(request : Request){
 
@@ -28,12 +31,11 @@ export async function POST(request : Request){
         console.log("File Size: " , file.size);
 
 
-        const extractedText = await extractTextFromPDF(file);
-        console.log(extractedText);
+        const chunks = await processPDF(file);
 
         return NextResponse.json({
-            success : true,
-            extractedText,
+            success:true,
+            totalChunks : chunks.length,
         });
 
         
