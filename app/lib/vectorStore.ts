@@ -12,7 +12,10 @@ export async function getCollection() {
 export async function storeEmbeddings(
   embeddedChunks: EmbeddedChunk[]
 ) {
+
+
   const collection = await getCollection();
+
 
   await collection.add({
     ids: embeddedChunks.map((chunk) => chunk.id),

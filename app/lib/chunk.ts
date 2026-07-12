@@ -13,10 +13,10 @@ export function chunkText(
   const chunks: Chunk[] = [];
 
   let start = 0;
-
+  
   while (start < text.length) {
 
-    let chunkIndex = 0;
+    
     const end = start + chunkSize;
 
     const chunk = text.slice(start, end);
@@ -26,12 +26,12 @@ export function chunkText(
     chunks.push({
       id: crypto.randomUUID(),
       text: chunk,
-      chunkIndex,
+      chunkIndex : chunks.length,
       pageNumber : null,
     });
 
     start += chunkSize - overlap;
-    chunkIndex++;
+    
   }
 
   return chunks;

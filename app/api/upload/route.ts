@@ -3,6 +3,8 @@ import { extractTextFromPDF } from "@/app/lib/pdf";
 import { chunkText } from "@/app/lib/chunk";
 import { generateEmbedding } from "@/app/lib/embeddings";
 import { processPDF } from "@/app/lib/rag";
+import { retrieveRelevantChunks } from "@/app/lib/retrieval";
+import { generateAnswer } from "@/app/lib/chat";
 
 export async function POST(request : Request){
 
@@ -32,6 +34,17 @@ export async function POST(request : Request){
 
 
         const chunks = await processPDF(file);
+
+        const question = "In which year Vansh was Grand Finalist at Smart India Hackathon ? ";
+
+const retrievedChunks = await retrieveRelevantChunks(question);
+
+const context = retrievedChunks.join("\n\n");
+
+const answer = await generateAnswer(question, context);
+
+console.log("========== AI ANSWER ==========");
+console.log(answer);
 
         return NextResponse.json({
             success:true,
