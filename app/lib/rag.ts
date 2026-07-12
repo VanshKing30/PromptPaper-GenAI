@@ -9,11 +9,12 @@ export interface EmbeddedChunk {
   chunkIndex: number;
   pageNumber: number | null;
   embedding: number[];
+  documentId : string;
 }
 
-export async function processPDF(file: File): Promise<EmbeddedChunk[]> {
-  console.log("🚀 Starting PDF Processing...");
-
+export async function processPDF(file: File): Promise<{documentId : string , embeddedChunks : EmbeddedChunk[]}> {
+  
+const documentId = crypto.randomUUID();
   // Step 1: Extract Text
   const extractedText = await extractTextFromPDF(file);
   console.log("✅ Text Extracted");
@@ -37,14 +38,14 @@ export async function processPDF(file: File): Promise<EmbeddedChunk[]> {
         `Failed to generate embedding for chunk ${chunk.chunkIndex}`
       );
     }
-
     embeddedChunks.push({
-      id: crypto.randomUUID(),
-      text: chunk.text,
-      chunkIndex: chunk.chunkIndex,
-      pageNumber: chunk.pageNumber,
-      embedding,
-    });
+    id: chunk.id,
+    text: chunk.text,
+    chunkIndex: chunk.chunkIndex,
+    pageNumber: chunk.pageNumber,
+    embedding,
+    documentId,
+});
   }
 
   console.log(
@@ -56,5 +57,8 @@ export async function processPDF(file: File): Promise<EmbeddedChunk[]> {
 
   console.log("✅ Stored embeddings in ChromaDB");
 
-  return embeddedChunks;
+  return {
+    documentId,
+    embeddedChunks,
+  }
 }

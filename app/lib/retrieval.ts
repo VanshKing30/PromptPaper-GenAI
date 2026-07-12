@@ -1,7 +1,7 @@
 import { generateEmbedding } from "./embeddings";
 import { getCollection } from "./vectorStore";
 
-export async function retrieveRelevantChunks(question : string){
+export async function retrieveRelevantChunks(question : string , documentId : string){
 
     const response = await generateEmbedding(question);
 
@@ -14,9 +14,15 @@ export async function retrieveRelevantChunks(question : string){
     const collection = await getCollection();
 
     const results = await collection.query({
-        queryEmbeddings : [questionEmbedding],
-        nResults : 3,
-    });
+  queryEmbeddings: [questionEmbedding],
+  nResults: 3,
+
+  where: {
+    documentId,
+  },
+
+  include: ["documents", "metadatas", "distances"],
+});
 
     console.log(JSON.stringify(results , null , 2));
 

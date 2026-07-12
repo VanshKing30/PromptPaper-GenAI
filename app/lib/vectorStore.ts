@@ -25,6 +25,7 @@ export async function storeEmbeddings(
     embeddings: embeddedChunks.map((chunk) => chunk.embedding),
 
     metadatas: embeddedChunks.map((chunk) => ({
+      documentId : chunk.documentId,
       chunkIndex: chunk.chunkIndex,
       pageNumber: chunk.pageNumber || 0,
     })),

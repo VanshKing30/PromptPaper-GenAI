@@ -5,7 +5,35 @@ import { useState } from "react";
 
 export default function PdfUploader() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [documentId, setDocumentId] = useState("");
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
 
+
+  const askQuestion = async () => {
+    if(!documentId){
+      alert("Please upload a pdf first");
+      return;
+    }
+
+    if(!question.trim()){
+      alert("Enter a questions.");
+      return;
+    }
+
+    const response = await fetch("/api/chat" , {
+      method : "POST",
+      headers : {
+        "Content-Type" : "application/json",
+      },
+      body : JSON.stringify({
+        question,
+        documentId,
+      })
+    });
+    const data = await response.json();
+    setAnswer(data.answer);
+  }
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
@@ -43,6 +71,7 @@ export default function PdfUploader() {
       // This line of code outputs the whole text extraced : console.log(data.extractedText);
 
       if (data.success) {
+        setDocumentId(data.documentId);
         alert("PDF Uploaded Successfully!");
       } else {
         alert(data.error);
@@ -69,6 +98,21 @@ export default function PdfUploader() {
       >
         Upload
       </button>
+
+      <input type="text" placeholder="Ask something" value={question} onChange={(e) => setQuestion(e.target.value)} className="border p-2 rounded" />
+      <button
+    onClick={askQuestion}
+    className="bg-blue-600 text-white px-4 py-2 rounded"
+>
+    Ask
+</button>
+{answer && (
+    <div className="border rounded p-4">
+        <h3 className="font-bold">Answer</h3>
+
+        <p>{answer}</p>
+    </div>
+)}
     </div>
   );
 }

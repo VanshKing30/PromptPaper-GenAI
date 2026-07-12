@@ -33,22 +33,13 @@ export async function POST(request : Request){
         console.log("File Size: " , file.size);
 
 
-        const chunks = await processPDF(file);
+        const { documentId, embeddedChunks } = await processPDF(file);
 
-        const question = "In which year Vansh was Grand Finalist at Smart India Hackathon ? ";
-
-const retrievedChunks = await retrieveRelevantChunks(question);
-
-const context = retrievedChunks.join("\n\n");
-
-const answer = await generateAnswer(question, context);
-
-console.log("========== AI ANSWER ==========");
-console.log(answer);
 
         return NextResponse.json({
             success:true,
-            totalChunks : chunks.length,
+            documentId,
+            totalChunks : embeddedChunks.length,
         });
 
         
