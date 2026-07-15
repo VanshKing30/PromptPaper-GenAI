@@ -1,32 +1,44 @@
 import { generateEmbedding } from "./embeddings";
 import { getCollection } from "./vectorStore";
 
-export async function retrieveRelevantChunks(question : string , documentId : string){
+export async function retrieveRelevantChunks(
+  question: string,
+  documentId: string
+) {
+  const response = await generateEmbedding(question);
 
-    const response = await generateEmbedding(question);
+  const questionEmbedding = response.embeddings?.[0]?.values;
 
-    const questionEmbedding = response.embeddings?.[0]?.values;
+  if (!questionEmbedding) {
+    throw new Error("Failed to generate question embedding");
+  }
 
-    if(!questionEmbedding){
-        throw new Error("Failed to generate question embedding");
-    }
+  const collection = await getCollection();
 
-    const collection = await getCollection();
+  const results = await collection.query({
+    queryEmbeddings: [questionEmbedding],
+    nResults: 3,
+    where: {
+      documentId,
+    },
+    include: ["documents", "metadatas", "distances"],
+  });
 
-    const results = await collection.query({
-  queryEmbeddings: [questionEmbedding],
-  nResults: 3,
+  console.log("================ Retrieval Results ================");
+  console.log(JSON.stringify(results, null, 2));
 
-  where: {
-    documentId,
-  },
+  const documents = results.documents?.[0] ?? [];
+  const metadatas = results.metadatas?.[0] ?? [];
 
-  include: ["documents", "metadatas", "distances"],
-});
+  const context = documents.join("\n\n");
 
-    console.log(JSON.stringify(results , null , 2));
+  const sources = documents.map((doc, index) => ({
+    text: doc,
+    ...(metadatas[index] as object),
+  }));
 
-    const documents = results.documents?.[0] ?? [];
-
-    return documents;
+  return {
+    context,
+    sources,
+  };
 }

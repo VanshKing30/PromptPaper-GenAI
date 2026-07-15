@@ -1,9 +1,16 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 
+type Source = {
+  text: string;
+  chunkIndex: number;
+  pageNumber: number | null;
+};
+
 type Message = {
   role: "user" | "assistant";
   content: string;
+  sources?: Source[];
 };
 
 export default function PdfUploader() {
@@ -54,9 +61,10 @@ export default function PdfUploader() {
       const data = await response.json();
 
       const aiMessage: Message = {
-        role: "assistant",
-        content: data.answer,
-      };
+  role: "assistant",
+  content: data.answer,
+  sources: data.sources,
+};
 
       setMessages((prev) => [...prev, aiMessage]);
       setLoading(false);
@@ -173,6 +181,35 @@ export default function PdfUploader() {
             }`}
           >
             {message.content}
+            {message.role === "assistant" &&
+  message.sources &&
+  message.sources.length > 0 && (
+    <div className="mt-4 border-t pt-3">
+      <p className="text-xs font-semibold text-gray-500 mb-2">
+        📄 Sources
+      </p>
+
+      {message.sources.map((source, index) => (
+        <div
+          key={index}
+          className="bg-gray-100 rounded p-2 text-xs mb-2"
+        >
+          <p>
+            <strong>Page:</strong>{" "}
+            {source.pageNumber ?? "Unknown"}
+          </p>
+
+          <p>
+            <strong>Chunk:</strong> {source.chunkIndex}
+          </p>
+
+          <p className="mt-2 line-clamp-3">
+            {source.text}
+          </p>
+        </div>
+      ))}
+    </div>
+)}
           </div>
         ))}
         {loading && (
