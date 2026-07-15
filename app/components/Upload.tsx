@@ -1,39 +1,74 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
 
-import { useState } from "react";
-
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+};
 
 export default function PdfUploader() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentId, setDocumentId] = useState("");
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading , setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+    });
+}, [messages, loading]);
 
   const askQuestion = async () => {
-    if(!documentId){
-      alert("Please upload a pdf first");
+    if (!documentId) {
+      alert("Please upload a PDF first.");
       return;
     }
 
-    if(!question.trim()){
-      alert("Enter a questions.");
+    if (!question.trim()) {
+      alert("Enter a question.");
       return;
     }
 
-    const response = await fetch("/api/chat" , {
-      method : "POST",
-      headers : {
-        "Content-Type" : "application/json",
-      },
-      body : JSON.stringify({
-        question,
-        documentId,
-      })
-    });
-    const data = await response.json();
-    setAnswer(data.answer);
-  }
+    const userMessage: Message = {
+      role: "user",
+      content: question,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question,
+          documentId,
+        }),
+      });
+
+      const data = await response.json();
+
+      const aiMessage: Message = {
+        role: "assistant",
+        content: data.answer,
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+      setLoading(false);
+
+      setQuestion("");
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+      alert("Something went wrong.");
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
 
@@ -43,18 +78,18 @@ export default function PdfUploader() {
       alert("Please upload a PDF file.");
       return;
     }
+
     setSelectedFile(file);
   };
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      alert("Please select a PDF");
+      alert("Please select a PDF.");
       return;
     }
 
     try {
       const formData = new FormData();
-
       formData.append("file", selectedFile);
 
       const response = await fetch("/api/upload", {
@@ -64,12 +99,6 @@ export default function PdfUploader() {
 
       const data = await response.json();
 
-      
-
-      
-
-      // This line of code outputs the whole text extraced : console.log(data.extractedText);
-
       if (data.success) {
         setDocumentId(data.documentId);
         alert("PDF Uploaded Successfully!");
@@ -78,7 +107,7 @@ export default function PdfUploader() {
       }
     } catch (error) {
       console.error(error);
-      alert("Upload failed");
+      alert("Upload failed.");
     }
   };
 
@@ -86,33 +115,74 @@ export default function PdfUploader() {
     <div className="flex flex-col gap-4 p-6 border rounded-lg shadow-md w-[500px]">
       <h2 className="text-2xl font-bold">Upload PDF</h2>
 
-      <input type="file" accept=".pdf" onChange={handleFileChange} />
+      <input
+        type="file"
+        accept=".pdf"
+        onChange={handleFileChange}
+      />
 
       {selectedFile && (
-        <p className="text-sm text-green-600">Selected: {selectedFile.name}</p>
+        <p className="text-sm text-green-600">
+          Selected: {selectedFile.name}
+        </p>
       )}
 
       <button
         onClick={handleUpload}
-        className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+          disabled={!selectedFile}
+       className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 disabled:bg-gray-500"
       >
         Upload
       </button>
 
-      <input type="text" placeholder="Ask something" value={question} onChange={(e) => setQuestion(e.target.value)} className="border p-2 rounded" />
-      <button
-    onClick={askQuestion}
-    className="bg-blue-600 text-white px-4 py-2 rounded"
->
-    Ask
-</button>
-{answer && (
-    <div className="border rounded p-4">
-        <h3 className="font-bold">Answer</h3>
+<input
+    disabled ={loading}
+    type="text"
+    placeholder="Ask something..."
+    value={question}
+    onChange={(e) => setQuestion(e.target.value)}
+    onKeyDown={(e) => {
+        if (e.key === "Enter" && !loading) {
+            askQuestion();
+        }
+    }}
+    className="border p-2 rounded"
+/>
+    
 
-        <p>{answer}</p>
+<button
+    onClick={askQuestion}
+    disabled={loading || !documentId}
+   className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400"
+>
+    {loading ? "Thinking..." : "Ask"}
+</button>
+<h3 className="text-lg font-semibold mt-4">
+    Conversation
+</h3>
+
+      <div className="space-y-4 mt-6 h-96 overflow-y-auto border rounded-lg p-4 bg-gray-50">
+        {messages.map((message, index) => (
+          
+          <div
+            key={index}
+            className={`p-3 rounded-xl shadow-sm whitespace-pre-wrap break-words max-w-[80%]  ${
+              message.role === "user"
+                ? "bg-blue-500 text-white ml-auto"
+                : "bg-gray-200 text-black"
+            }`}
+          >
+            {message.content}
+          </div>
+        ))}
+        {loading && (
+    <div className="bg-gray-200 text-black p-3 rounded-lg max-w-[80%]">
+        Thinking...
     </div>
-)}
+)}  
+  <div ref={messagesEndRef} />
+      </div>
+      
     </div>
   );
 }
