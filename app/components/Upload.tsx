@@ -12,10 +12,18 @@ type Message = {
   content: string;
   sources?: Source[];
 };
+type UploadedDocument = {
+  id: string;
+  name: string;
+};
+
+
 
 export default function PdfUploader() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [documentId, setDocumentId] = useState("");
+  
+const [documents, setDocuments] = useState<UploadedDocument[]>([]);
+const [selectedDocumentId, setSelectedDocumentId] = useState("");
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading , setLoading] = useState(false);
@@ -28,7 +36,7 @@ export default function PdfUploader() {
 }, [messages, loading]);
 
   const askQuestion = async () => {
-    if (!documentId) {
+    if  (!selectedDocumentId){
       alert("Please upload a PDF first.");
       return;
     }
@@ -52,10 +60,11 @@ export default function PdfUploader() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          question,
-          documentId,
-        }),
+      body: JSON.stringify({
+    question,
+    documentId: selectedDocumentId,
+    history: messages,
+}),
       });
 
       const data = await response.json();
@@ -108,7 +117,14 @@ export default function PdfUploader() {
       const data = await response.json();
 
       if (data.success) {
-        setDocumentId(data.documentId);
+        const uploadedDocument = {
+  id: data.documentId,
+  name: selectedFile.name,
+};
+
+setDocuments((prev) => [...prev, uploadedDocument]);
+
+setSelectedDocumentId(data.documentId);
         alert("PDF Uploaded Successfully!");
       } else {
         alert(data.error);
@@ -119,107 +135,133 @@ export default function PdfUploader() {
     }
   };
 
-  return (
-    <div className="flex flex-col gap-4 p-6 border rounded-lg shadow-md w-[500px]">
-      <h2 className="text-2xl font-bold">Upload PDF</h2>
+return (
+  <div className="flex flex-col gap-4 p-6 border rounded-lg shadow-md w-[500px]">
+    <h2 className="text-2xl font-bold">Upload PDF</h2>
 
-      <input
-        type="file"
-        accept=".pdf"
-        onChange={handleFileChange}
-      />
+    <input
+      type="file"
+      accept=".pdf"
+      onChange={handleFileChange}
+    />
 
-      {selectedFile && (
-        <p className="text-sm text-green-600">
-          Selected: {selectedFile.name}
-        </p>
-      )}
-
-      <button
-        onClick={handleUpload}
-          disabled={!selectedFile}
-       className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 disabled:bg-gray-500"
-      >
-        Upload
-      </button>
-
-<input
-    disabled ={loading}
-    type="text"
-    placeholder="Ask something..."
-    value={question}
-    onChange={(e) => setQuestion(e.target.value)}
-    onKeyDown={(e) => {
-        if (e.key === "Enter" && !loading) {
-            askQuestion();
-        }
-    }}
-    className="border p-2 rounded"
-/>
-    
-
-<button
-    onClick={askQuestion}
-    disabled={loading || !documentId}
-   className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400"
->
-    {loading ? "Thinking..." : "Ask"}
-</button>
-<h3 className="text-lg font-semibold mt-4">
-    Conversation
-</h3>
-
-      <div className="space-y-4 mt-6 h-96 overflow-y-auto border rounded-lg p-4 bg-gray-50">
-        {messages.map((message, index) => (
-          
-          <div
-            key={index}
-            className={`p-3 rounded-xl shadow-sm whitespace-pre-wrap break-words max-w-[80%]  ${
-              message.role === "user"
-                ? "bg-blue-500 text-white ml-auto"
-                : "bg-gray-200 text-black"
-            }`}
-          >
-            {message.content}
-            {message.role === "assistant" &&
-  message.sources &&
-  message.sources.length > 0 && (
-    <div className="mt-4 border-t pt-3">
-      <p className="text-xs font-semibold text-gray-500 mb-2">
-        📄 Sources
+    {selectedFile && (
+      <p className="text-sm text-green-600">
+        Selected: {selectedFile.name}
       </p>
+    )}
 
-      {message.sources.map((source, index) => (
+    <button
+      onClick={handleUpload}
+      disabled={!selectedFile}
+      className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 disabled:bg-gray-500"
+    >
+      Upload
+    </button>
+
+    {/* Uploaded Documents */}
+
+    {documents.length > 0 && (
+      <>
+        <h3 className="text-lg font-semibold mt-2">
+          Uploaded Documents
+        </h3>
+
+        <div className="space-y-2">
+          {documents.map((doc) => (
+            <button
+              key={doc.id}
+              onClick={() => setSelectedDocumentId(doc.id)}
+              className={`w-full text-left px-3 py-2 rounded border transition ${
+                selectedDocumentId === doc.id
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white hover:bg-gray-100"
+              }`}
+            >
+              📄 {doc.name}
+            </button>
+          ))}
+        </div>
+      </>
+    )}
+
+    <input
+      disabled={loading}
+      type="text"
+      placeholder="Ask something..."
+      value={question}
+      onChange={(e) => setQuestion(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !loading) {
+          askQuestion();
+        }
+      }}
+      className="border p-2 rounded"
+    />
+
+    <button
+      onClick={askQuestion}
+      disabled={loading || !selectedDocumentId}
+      className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400"
+    >
+      {loading ? "Thinking..." : "Ask"}
+    </button>
+
+    <h3 className="text-lg font-semibold mt-4">
+      Conversation
+    </h3>
+
+    <div className="space-y-4 mt-6 h-96 overflow-y-auto border rounded-lg p-4 bg-gray-50">
+      {messages.map((message, index) => (
         <div
           key={index}
-          className="bg-gray-100 rounded p-2 text-xs mb-2"
+          className={`p-3 rounded-xl shadow-sm whitespace-pre-wrap break-words max-w-[80%] ${
+            message.role === "user"
+              ? "bg-blue-500 text-white ml-auto"
+              : "bg-gray-200 text-black"
+          }`}
         >
-          <p>
-            <strong>Page:</strong>{" "}
-            {source.pageNumber ?? "Unknown"}
-          </p>
+          {message.content}
 
-          <p>
-            <strong>Chunk:</strong> {source.chunkIndex}
-          </p>
+          {message.role === "assistant" &&
+            message.sources &&
+            message.sources.length > 0 && (
+              <div className="mt-4 border-t pt-3">
+                <p className="text-xs font-semibold text-gray-500 mb-2">
+                  📄 Sources
+                </p>
 
-          <p className="mt-2 line-clamp-3">
-            {source.text}
-          </p>
+                {message.sources.map((source, index) => (
+                  <div
+                    key={index}
+                    className="bg-gray-100 rounded p-2 text-xs mb-2"
+                  >
+                    <p>
+                      <strong>Page:</strong>{" "}
+                      {source.pageNumber ?? "Unknown"}
+                    </p>
+
+                    <p>
+                      <strong>Chunk:</strong> {source.chunkIndex}
+                    </p>
+
+                    <p className="mt-2 line-clamp-3">
+                      {source.text}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
         </div>
       ))}
+
+      {loading && (
+        <div className="bg-gray-200 text-black p-3 rounded-lg max-w-[80%]">
+          Thinking...
+        </div>
+      )}
+
+      <div ref={messagesEndRef} />
     </div>
-)}
-          </div>
-        ))}
-        {loading && (
-    <div className="bg-gray-200 text-black p-3 rounded-lg max-w-[80%]">
-        Thinking...
-    </div>
-)}  
-  <div ref={messagesEndRef} />
-      </div>
-      
-    </div>
-  );
-}
+  </div>
+)};

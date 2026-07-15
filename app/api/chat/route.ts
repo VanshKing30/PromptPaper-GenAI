@@ -4,7 +4,11 @@ import { generateAnswer } from "@/app/lib/chat";
 
 export async function POST(request: Request) {
   try {
-    const { question, documentId } = await request.json();
+    const {
+    question,
+    documentId,
+    history,
+} = await request.json();
 
     if (!question || !documentId) {
       return NextResponse.json(
@@ -24,7 +28,11 @@ export async function POST(request: Request) {
     );
 
     // Generate answer
-    const answer = await generateAnswer(question, context);
+   const answer = await generateAnswer(
+    question,
+    context,
+    history ?? []
+);
 
     return NextResponse.json({
       success: true,

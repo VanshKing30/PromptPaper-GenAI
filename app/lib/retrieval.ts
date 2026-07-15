@@ -17,7 +17,7 @@ export async function retrieveRelevantChunks(
 
   const results = await collection.query({
     queryEmbeddings: [questionEmbedding],
-    nResults: 3,
+    nResults: 6,
     where: {
       documentId,
     },

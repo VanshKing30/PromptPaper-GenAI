@@ -1,22 +1,16 @@
 import { ai } from "./gemini";
-
+import { Message } from "./types";
+import { buildPrompt } from "./prompt";
 export async function generateAnswer(
-    question : string,
-    context : string
+    question: string,
+    context: string,
+    history: Message[]
 ): Promise<string> {
-    const prompt = `You are a helpful AI assistatn. 
-    Answer ONLY using the provided context.
-    If the answer cannot be found in the context, reply: 
-    "I couldn't find that information in the document.
-    ---------------------------
-    Context : 
-    ${context}
-    
-    ----------------------------
-    Question : 
-    ${question}
-    
-    Answer: `;
+  const prompt = buildPrompt(
+    question,
+    context,
+    history
+);
 
     const response = await ai.models.generateContent({
         model : "gemini-2.5-flash",
